@@ -1,155 +1,161 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>75 Hard Tracker</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="icon" href="data:," />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>75 Hard Tracker</title>
+    <style>
+        body { margin: 0; font-family: sans-serif; background: #111; color: #eee; }
+        header { display: flex; background: #000; padding: 10px; justify-content: space-around; }
+        button { background: none; border: none; color: #eee; font-size: 16px; cursor: pointer; padding: 10px; }
+        button:hover { color: #0f0; }
+        .tab { display: none; padding: 20px; }
+        .active { display: block; }
+        .task { margin-bottom: 10px; }
+        .progress-bar { height: 5px; background: #0f0; width: 0%; margin-top: 20px; transition: width 1s; }
+        .achievement { margin: 10px 0; background: #222; padding: 10px; border-radius: 5px; }
+        input[type='text'], textarea { width: 100%; padding: 10px; background: #222; color: #eee; border: none; margin-top: 10px; }
+    </style>
 </head>
-<body class="bg-white text-black min-h-screen flex flex-col items-center p-6">
+<body>
 
-  <!-- Header -->
-  <h1 class="text-3xl font-bold mb-8">75 Hard Tracker</h1>
+<header>
+    <button onclick="showTab('tracker')">75 Hard</button>
+    <button onclick="showTab('stats')">Statistik</button>
+    <button onclick="showTab('moodboard')">Moodboard</button>
+    <button onclick="showTab('sleep')">Schlaf</button>
+    <button onclick="showTab('achievements')">Achievements</button>
+</header>
 
-  <!-- Tag Status -->
-  <div id="dayCounter" class="text-xl mb-4"></div>
+<div id="tracker" class="tab active">
+    <h2>75 Hard Aufgaben</h2>
+    <div class="task"><input type="checkbox" id="workout1"> 1. Workout</div>
+    <div class="task"><input type="checkbox" id="workout2"> 2. Workout</div>
+    <div class="task"><input type="checkbox" id="water"> 3. 3 Liter Wasser</div>
+    <div class="task"><input type="checkbox" id="diet"> 4. Diät einhalten</div>
+    <div class="task"><input type="checkbox" id="reading"> 5. 10 Seiten lesen</div>
+    <div class="task"><input type="checkbox" id="photo"> 6. Fortschrittsfoto</div>
+    <button onclick="saveDay()">Speichern</button>
+    <div class="progress-bar" id="progress"></div>
+</div>
 
-  <!-- Aufgabenliste -->
-  <div class="flex flex-col space-y-4 w-full max-w-md">
-    <label class="flex items-center space-x-3">
-      <input type="checkbox" id="workout1" class="h-5 w-5">
-      <span>Workout 1 erledigt</span>
-    </label>
-    <label class="flex items-center space-x-3">
-      <input type="checkbox" id="workout2" class="h-5 w-5">
-      <span>Workout 2 erledigt</span>
-    </label>
-    <label class="flex items-center space-x-3">
-      <input type="checkbox" id="water" class="h-5 w-5">
-      <span>3,8 L Wasser getrunken</span>
-    </label>
-    <label class="flex items-center space-x-3">
-      <input type="checkbox" id="reading" class="h-5 w-5">
-      <span>10 Seiten gelesen</span>
-    </label>
-    <label class="flex items-center space-x-3">
-      <input type="checkbox" id="diet" class="h-5 w-5">
-      <span>Diät eingehalten</span>
-    </label>
-    <label class="flex items-center space-x-3">
-      <input type="checkbox" id="noAlcohol" class="h-5 w-5">
-      <span>Kein Alkohol / Keine Cheat Meals</span>
-    </label>
-    <label class="flex items-center space-x-3">
-      <input type="checkbox" id="progressPic" class="h-5 w-5">
-      <span>Fortschrittsfoto gemacht</span>
-    </label>
-  </div>
+<div id="stats" class="tab">
+    <h2>Statistik</h2>
+    <div id="log"></div>
+</div>
 
-  <!-- Speichern Button -->
-  <button onclick="saveDay()" class="mt-8 bg-black text-white px-6 py-2 rounded-full hover:bg-gray-800 transition">
-    Speichern
-  </button>
+<div id="moodboard" class="tab">
+    <h2>Moodboard / Tagebuch</h2>
+    <textarea id="mood" placeholder="Schreib hier deinen Tagesrückblick..."></textarea>
+    <button onclick="saveMood()">Mood speichern</button>
+</div>
 
-  <!-- Reset Button -->
-  <button onclick="fullReset()" class="mt-4 text-sm text-gray-500 hover:text-black">
-    Reset Alles
-  </button>
+<div id="sleep" class="tab">
+    <h2>Schlaftracker</h2>
+    <input type="text" id="sleepStart" placeholder="Schlafenszeit (z.B. 23:00)">
+    <input type="text" id="sleepEnd" placeholder="Aufwachzeit (z.B. 07:00)">
+    <button onclick="saveSleep()">Schlaf speichern</button>
+    <div id="sleepInfo"></div>
+</div>
 
-  <!-- Verlauf -->
-  <h2 class="text-2xl font-bold mt-10 mb-4">Verlauf</h2>
-  <div id="history" class="w-full max-w-md space-y-2"></div>
+<div id="achievements" class="tab">
+    <h2>Achievements</h2>
+    <div id="achievementsList"></div>
+</div>
 
-  <script>
-    // Startdatum holen oder setzen
-    const startDate = localStorage.getItem('startDate') || new Date().toISOString().split('T')[0];
-    localStorage.setItem('startDate', startDate);
+<script>
+// Tabs wechseln
+function showTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(tab).classList.add('active');
+}
 
-    // Fortschritts-Tag laden oder bei 1 starten
-    let dayCount = parseInt(localStorage.getItem('dayCount')) || 1;
+// Tag speichern
+function saveDay() {
+    let now = new Date();
+    let dayLog = JSON.parse(localStorage.getItem('dayLog') || '[]');
 
-    function updateDayCounter() {
-      document.getElementById('dayCounter').innerText = `Tag ${dayCount} / 75`;
+    let tasks = ['workout1', 'workout2', 'water', 'diet', 'reading', 'photo'];
+    let allDone = tasks.every(id => document.getElementById(id).checked);
+
+    if (allDone) {
+        let entry = {
+            date: now.toLocaleDateString(),
+            time: now.toLocaleTimeString(),
+            tasksDone: tasks.map(id => ({ task: id, time: now.toLocaleTimeString() }))
+        };
+        dayLog.push(entry);
+        localStorage.setItem('dayLog', JSON.stringify(dayLog));
+        animateProgress();
+        checkAchievements();
+    } else {
+        alert('Du musst alle Aufgaben abhaken!');
     }
+}
 
-    updateDayCounter();
+// Fortschrittsanimation
+function animateProgress() {
+    let bar = document.getElementById('progress');
+    bar.style.width = '100%';
+    setTimeout(() => bar.style.width = '0%', 2000);
+}
 
-    // Tag speichern
-    function saveDay() {
-      const today = new Date().toISOString().split('T')[0];
-      const data = {
-        workout1: document.getElementById('workout1').checked,
-        workout2: document.getElementById('workout2').checked,
-        water: document.getElementById('water').checked,
-        reading: document.getElementById('reading').checked,
-        diet: document.getElementById('diet').checked,
-        noAlcohol: document.getElementById('noAlcohol').checked,
-        progressPic: document.getElementById('progressPic').checked
-      };
-      
-      const allCompleted = Object.values(data).every(Boolean);
+// Mood speichern
+function saveMood() {
+    localStorage.setItem('mood', document.getElementById('mood').value);
+    alert('Mood gespeichert!');
+}
 
-      if (allCompleted) {
-        // Alles erledigt → Tag speichern
-        localStorage.setItem('75hard-' + today, JSON.stringify({ status: '✅', day: dayCount }));
-        dayCount++;
-        localStorage.setItem('dayCount', dayCount);
-      } else {
-        // Nicht alles erledigt → Reset und Reset-Eintrag speichern
-        alert('Du hast nicht alles erledigt! Fortschritt wird zurückgesetzt.');
-        localStorage.setItem('75hard-' + today, JSON.stringify({ status: '❌ → Reset', day: dayCount }));
-        dayCount = 1;
-        localStorage.setItem('dayCount', dayCount);
-      }
+// Schlaf speichern
+function saveSleep() {
+    let start = document.getElementById('sleepStart').value;
+    let end = document.getElementById('sleepEnd').value;
+    localStorage.setItem('sleep', JSON.stringify({start, end}));
+    showSleepInfo();
+}
 
-      updateDayCounter();
-      loadHistory();
-      clearCheckboxes();
+// Schlafinfo anzeigen
+function showSleepInfo() {
+    let data = JSON.parse(localStorage.getItem('sleep') || '{}');
+    if (data.start && data.end) {
+        document.getElementById('sleepInfo').innerText = `Geschlafen von ${data.start} bis ${data.end}`;
     }
+}
 
-    // Verlauf laden
-    function loadHistory() {
-      const historyDiv = document.getElementById('history');
-      historyDiv.innerHTML = '';
-      const entries = [];
+// Achievements checken
+function checkAchievements() {
+    let dayLog = JSON.parse(localStorage.getItem('dayLog') || '[]');
+    let achievements = [];
+    if (dayLog.length >= 5) achievements.push('5 Tage geschafft!');
+    if (dayLog.length >= 10) achievements.push('10 Tage geschafft!');
+    if (dayLog.length >= 20) achievements.push('20 Tage geschafft!');
+    document.getElementById('achievementsList').innerHTML = achievements.map(a => `<div class='achievement'>${a}</div>`).join('');
+}
 
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key.startsWith('75hard-')) {
-          const entry = JSON.parse(localStorage.getItem(key));
-          entries.push({ date: key.replace('75hard-', ''), status: entry.status, day: entry.day });
-        }
-      }
-
-      // Nach Datum sortieren
-      entries.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-      entries.forEach(e => {
-        historyDiv.innerHTML += `
-          <div class="flex justify-between p-2 ${e.status.includes('✅') ? 'bg-green-100' : 'bg-red-100'} rounded">
-            <span>Tag ${e.day}</span>
-            <span>${e.status}</span>
-          </div>
-        `;
-      });
+// Auto-Reset um Mitternacht
+setInterval(() => {
+    let lastSaved = localStorage.getItem('lastSaved') || '';
+    let today = new Date().toLocaleDateString();
+    if (lastSaved !== today) {
+        localStorage.removeItem('dayLog');
+        localStorage.setItem('lastSaved', today);
     }
+}, 60000); // Checke jede Minute
 
-    // Checkboxen zurücksetzen
-    function clearCheckboxes() {
-      document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-    }
+// Statistik laden
+function loadStats() {
+    let dayLog = JSON.parse(localStorage.getItem('dayLog') || '[]');
+    document.getElementById('log').innerHTML = dayLog.map(e => `<div>${e.date} - ${e.time}</div>`).join('');
+}
 
-    // Alles zurücksetzen
-    function fullReset() {
-      if (confirm('Bist du sicher, dass du ALLES löschen möchtest?')) {
-        localStorage.clear();
-        location.reload();
-      }
-    }
-
-    loadHistory();
-  </script>
+// Initialisieren
+window.onload = function() {
+    loadStats();
+    showSleepInfo();
+    checkAchievements();
+    document.getElementById('mood').value = localStorage.getItem('mood') || '';
+}
+</script>
 
 </body>
 </html>
