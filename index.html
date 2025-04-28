@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>75 Hard Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="data:," />
+</head>
+<body class="bg-white text-black min-h-screen flex flex-col items-center p-6">
+
+  <!-- Header -->
+  <h1 class="text-3xl font-bold mb-8">75 Hard Tracker</h1>
+
+  <!-- Tag Status -->
+  <div id="dayCounter" class="text-xl mb-4"></div>
+
+  <!-- Aufgabenliste -->
+  <div class="flex flex-col space-y-4 w-full max-w-md">
+    <label class="flex items-center space-x-3">
+      <input type="checkbox" id="workout1" class="h-5 w-5">
+      <span>Workout 1 erledigt</span>
+    </label>
+    <label class="flex items-center space-x-3">
+      <input type="checkbox" id="workout2" class="h-5 w-5">
+      <span>Workout 2 erledigt</span>
+    </label>
+    <label class="flex items-center space-x-3">
+      <input type="checkbox" id="water" class="h-5 w-5">
+      <span>3,8 L Wasser getrunken</span>
+    </label>
+    <label class="flex items-center space-x-3">
+      <input type="checkbox" id="reading" class="h-5 w-5">
+      <span>10 Seiten gelesen</span>
+    </label>
+    <label class="flex items-center space-x-3">
+      <input type="checkbox" id="diet" class="h-5 w-5">
+      <span>Diät eingehalten</span>
+    </label>
+    <label class="flex items-center space-x-3">
+      <input type="checkbox" id="noAlcohol" class="h-5 w-5">
+      <span>Kein Alkohol / Keine Cheat Meals</span>
+    </label>
+    <label class="flex items-center space-x-3">
+      <input type="checkbox" id="progressPic" class="h-5 w-5">
+      <span>Fortschrittsfoto gemacht</span>
+    </label>
+  </div>
+
+  <!-- Speichern Button -->
+  <button onclick="saveDay()" class="mt-8 bg-black text-white px-6 py-2 rounded-full hover:bg-gray-800 transition">
+    Speichern
+  </button>
+
+  <!-- Reset Button -->
+  <button onclick="resetProgress()" class="mt-4 text-sm text-gray-500 hover:text-black">
+    Reset Fortschritt
+  </button>
+
+  <!-- Verlauf -->
+  <h2 class="text-2xl font-bold mt-10 mb-4">Verlauf</h2>
+  <div id="history" class="w-full max-w-md space-y-2"></div>
+
+  <script>
+    // Startdatum setzen (z.B. heute)
+    const startDate = localStorage.getItem('startDate') || new Date().toISOString().split('T')[0];
+    localStorage.setItem('startDate', startDate);
+
+    // Funktion zum Zählen der Tage
+    function updateDayCounter() {
+      const today = new Date();
+      const start = new Date(startDate);
+      const diffTime = Math.abs(today - start);
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      document.getElementById('dayCounter').innerText = `Tag ${diffDays} / 75`;
+    }
+
+    updateDayCounter();
+
+    // Funktion zum Speichern eines Tages
+    function saveDay() {
+      const today = new Date().toISOString().split('T')[0];
+      const data = {
+        workout1: document.getElementById('workout1').checked,
+        workout2: document.getElementById('workout2').checked,
+        water: document.getElementById('water').checked,
+        reading: document.getElementById('reading').checked,
+        diet: document.getElementById('diet').checked,
+        noAlcohol: document.getElementById('noAlcohol').checked,
+        progressPic: document.getElementById('progressPic').checked
+      };
+      localStorage.setItem('75hard-' + today, JSON.stringify(data));
+      loadHistory();
+    }
+
+    // Funktion zum Laden des Verlaufs
+    function loadHistory() {
+      const historyDiv = document.getElementById('history');
+      historyDiv.innerHTML = '';
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('75hard-')) {
+          const dayData = JSON.parse(localStorage.getItem(key));
+          const date = key.replace('75hard-', '');
+          const complete = Object.values(dayData).every(Boolean);
+          historyDiv.innerHTML += `
+            <div class="flex justify-between p-2 ${complete ? 'bg-green-100' : 'bg-red-100'} rounded">
+              <span>${date}</span>
+              <span>${complete ? '✅' : '❌'}</span>
+            </div>
+          `;
+        }
+      }
+    }
+
+    loadHistory();
+
+    // Funktion zum kompletten Zurücksetzen
+    function resetProgress() {
+      if (confirm('Bist du sicher, dass du alles löschen möchtest?')) {
+        localStorage.clear();
+        location.reload();
+      }
+    }
+
+  </script>
+
+</body>
+</html>
