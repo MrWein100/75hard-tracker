@@ -53,8 +53,8 @@
   </button>
 
   <!-- Reset Button -->
-  <button onclick="resetProgress()" class="mt-4 text-sm text-gray-500 hover:text-black">
-    Reset Fortschritt
+  <button onclick="fullReset()" class="mt-4 text-sm text-gray-500 hover:text-black">
+    Reset Alles
   </button>
 
   <!-- Verlauf -->
@@ -62,22 +62,20 @@
   <div id="history" class="w-full max-w-md space-y-2"></div>
 
   <script>
-    // Startdatum setzen (z.B. heute)
+    // Startdatum holen oder setzen
     const startDate = localStorage.getItem('startDate') || new Date().toISOString().split('T')[0];
     localStorage.setItem('startDate', startDate);
 
-    // Funktion zum Zählen der Tage
+    // Fortschritts-Tag laden oder bei 1 starten
+    let dayCount = parseInt(localStorage.getItem('dayCount')) || 1;
+
     function updateDayCounter() {
-      const today = new Date();
-      const start = new Date(startDate);
-      const diffTime = Math.abs(today - start);
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
-      document.getElementById('dayCounter').innerText = `Tag ${diffDays} / 75`;
+      document.getElementById('dayCounter').innerText = `Tag ${dayCount} / 75`;
     }
 
     updateDayCounter();
 
-    // Funktion zum Speichern eines Tages
+    // Tag speichern
     function saveDay() {
       const today = new Date().toISOString().split('T')[0];
       const data = {
@@ -89,40 +87,68 @@
         noAlcohol: document.getElementById('noAlcohol').checked,
         progressPic: document.getElementById('progressPic').checked
       };
-      localStorage.setItem('75hard-' + today, JSON.stringify(data));
+      
+      const allCompleted = Object.values(data).every(Boolean);
+
+      if (allCompleted) {
+        // Alles erledigt → Tag speichern
+        localStorage.setItem('75hard-' + today, JSON.stringify({ status: '✅', day: dayCount }));
+        dayCount++;
+        localStorage.setItem('dayCount', dayCount);
+      } else {
+        // Nicht alles erledigt → Reset und Reset-Eintrag speichern
+        alert('Du hast nicht alles erledigt! Fortschritt wird zurückgesetzt.');
+        localStorage.setItem('75hard-' + today, JSON.stringify({ status: '❌ → Reset', day: dayCount }));
+        dayCount = 1;
+        localStorage.setItem('dayCount', dayCount);
+      }
+
+      updateDayCounter();
       loadHistory();
+      clearCheckboxes();
     }
 
-    // Funktion zum Laden des Verlaufs
+    // Verlauf laden
     function loadHistory() {
       const historyDiv = document.getElementById('history');
       historyDiv.innerHTML = '';
+      const entries = [];
+
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key.startsWith('75hard-')) {
-          const dayData = JSON.parse(localStorage.getItem(key));
-          const date = key.replace('75hard-', '');
-          const complete = Object.values(dayData).every(Boolean);
-          historyDiv.innerHTML += `
-            <div class="flex justify-between p-2 ${complete ? 'bg-green-100' : 'bg-red-100'} rounded">
-              <span>${date}</span>
-              <span>${complete ? '✅' : '❌'}</span>
-            </div>
-          `;
+          const entry = JSON.parse(localStorage.getItem(key));
+          entries.push({ date: key.replace('75hard-', ''), status: entry.status, day: entry.day });
         }
       }
+
+      // Nach Datum sortieren
+      entries.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      entries.forEach(e => {
+        historyDiv.innerHTML += `
+          <div class="flex justify-between p-2 ${e.status.includes('✅') ? 'bg-green-100' : 'bg-red-100'} rounded">
+            <span>Tag ${e.day}</span>
+            <span>${e.status}</span>
+          </div>
+        `;
+      });
     }
 
-    loadHistory();
+    // Checkboxen zurücksetzen
+    function clearCheckboxes() {
+      document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    }
 
-    // Funktion zum kompletten Zurücksetzen
-    function resetProgress() {
-      if (confirm('Bist du sicher, dass du alles löschen möchtest?')) {
+    // Alles zurücksetzen
+    function fullReset() {
+      if (confirm('Bist du sicher, dass du ALLES löschen möchtest?')) {
         localStorage.clear();
         location.reload();
       }
     }
 
+    loadHistory();
   </script>
 
 </body>
